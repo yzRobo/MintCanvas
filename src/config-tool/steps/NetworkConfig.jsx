@@ -52,7 +52,7 @@ const NetworkConfig = ({ data, updateData }) => {
               <Input
                 id={`contractAddress-${networkKey}`}
                 name={`contractAddress-${networkKey}`}
-                placeholder="0x... or leave blank/UNUSED"
+                placeholder="0x... or type UNUSED if not needed"
                 value={currentAddress}
                 onChange={(e) => handleAddressChange(networkKey, e.target.value)}
                 className={isInvalid ? 'border-red-500 focus-visible:ring-red-500' : ''}

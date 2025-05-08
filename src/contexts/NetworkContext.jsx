@@ -1,184 +1,238 @@
 // src/contexts/NetworkContext.jsx
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { networks as configNetworks, defaultNetworkKey as configDefaultKey } from '@/config/networks'; // Use imported config directly
+import { useConfig } from './ConfigContext'; // Import useConfig
+import { loadNetworksConfig } from '@/config/networks'; // Import the loading function
 import { ethers } from 'ethers';
 
 const NetworkContext = createContext(null);
 
-// Helper to find the first available public network key
-const getFirstPublicNetworkKey = () => {
-    return Object.keys(configNetworks).find(key => !configNetworks[key].ownerOnly) || configDefaultKey;
-};
-
-
 export const NetworkProvider = ({ children }) => {
-  // Initialize state trying to use default, ensure it's valid
-  const initialDefaultKey = configNetworks[configDefaultKey] ? configDefaultKey : getFirstPublicNetworkKey();
-  const [currentNetworkKey, setCurrentNetworkKey] = useState(initialDefaultKey);
+  const { configData, isConfigured, isLoading: isConfigLoading } = useConfig(); // Use the config context
+
+  // State holds the entire configuration loaded by loadNetworksConfig
+  const [networkConfig, setNetworkConfig] = useState({
+      networks: {},
+      defaultNetworkKey: null,
+      defaultNetwork: null,
+      displayPrefs: {},
+      projectName: "Loading..." // Initial placeholder
+  });
+
+  // State for the *currently selected* network key by the user/wallet
+  const [currentNetworkKey, setCurrentNetworkKey] = useState(null);
+
   const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // Tracks if NetworkContext has synced
 
-  // Derive currentNetwork safely, falling back to the initial default
-  const currentNetwork = configNetworks[currentNetworkKey] || configNetworks[initialDefaultKey];
+  // Effect to load network config based on ConfigContext
+  useEffect(() => {
+    if (isConfigured && configData !== null && !isConfigLoading) {
+      console.log("NetworkContext: Config data ready, generating network config...");
+      const loadedConfig = loadNetworksConfig(configData);
+      setNetworkConfig(loadedConfig);
+      // Set initial selected key based on loaded default, *before* wallet sync
+      setCurrentNetworkKey(loadedConfig.defaultNetworkKey);
+       console.log("NetworkContext: Network config generated.", loadedConfig);
+       // Don't set isInitialized here yet, wait for wallet sync effect
+    } else if (!isConfigLoading && !isConfigured) {
+        console.log("NetworkContext: App not configured, clearing network state.");
+         setNetworkConfig({ networks: {}, defaultNetworkKey: null, defaultNetwork: null, displayPrefs: {}, projectName: "..." });
+         setCurrentNetworkKey(null);
+         setIsInitialized(false); // Ensure reset if config becomes invalid
+    }
+  }, [configData, isConfigured, isConfigLoading]);
 
-  // Function to attempt switching network in the wallet AND update context state
+  // Derive currentNetwork safely based on the selected key and loaded config
+  const currentNetwork = currentNetworkKey ? networkConfig.networks[currentNetworkKey] : null;
+
+  // --- Switch Network Logic ---
   const switchNetwork = useCallback(async (targetNetworkKey) => {
-    const targetNetwork = configNetworks[targetNetworkKey];
+    // Use the loaded networks from state
+    const targetNetwork = networkConfig.networks[targetNetworkKey];
 
-    // Ensure target is valid and different from current
-    if (!targetNetwork || currentNetworkKey === targetNetworkKey) {
-      console.log("Context: Switch skipped - invalid target or already on target network.", { targetNetworkKey, currentNetworkKey });
+    if (!targetNetwork) {
+        console.error(`NetworkContext: Switch failed - Target network key "${targetNetworkKey}" not found in loaded config.`);
+        setError(`Network "${targetNetworkKey}" is not available or configured correctly.`);
+        return;
+    }
+    if (currentNetworkKey === targetNetworkKey) {
+      console.log("NetworkContext: Switch skipped - Already on target network.", { targetNetworkKey, currentNetworkKey });
       return;
     }
 
-    console.log(`Context: Attempting switch to ${targetNetwork.name} (${targetNetworkKey})`);
-    setError(null); // Clear previous errors on new attempt
-
-    // --- Update Context State Regardless of Wallet ---
-    // This ensures the UI reflects the target network even if no wallet action occurs.
-    // Do this *before* potential async wallet operations.
-    setCurrentNetworkKey(targetNetworkKey);
-    console.log(`Context: Internal state updated to ${targetNetworkKey}`);
+     console.log(`NetworkContext: Attempting switch to ${targetNetwork.name} (${targetNetworkKey})`);
+     setError(null);
+     // Update internal state first - this makes the UI feel responsive
+     setCurrentNetworkKey(targetNetworkKey);
+     console.log(`NetworkContext: Internal state updated to ${targetNetworkKey}`);
 
 
-    // --- Attempt Wallet Switch ONLY if Wallet Exists ---
     if (window.ethereum) {
-        setIsSwitching(true); // Only set switching state if we interact with wallet
-        console.log(`Context: Requesting wallet switch to chainId ${targetNetwork.chainIdHex}`);
+        setIsSwitching(true);
+        const switchParams = [{ chainId: targetNetwork.chainIdHex }];
+        console.log(`NetworkContext: Requesting wallet switch. Method: wallet_switchEthereumChain, Params:`, JSON.parse(JSON.stringify(switchParams))); // Log clean params
         try {
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
-                params: [{ chainId: targetNetwork.chainIdHex }],
+                params: switchParams,
             });
-            // Success: wallet confirms via 'chainChanged' event later, state already updated above.
-            console.log(`Context: Successfully requested wallet switch to ${targetNetwork.name}.`);
+            console.log(`NetworkContext: Successfully requested wallet switch to ${targetNetwork.name}. Waiting for 'chainChanged' event for confirmation.`);
+            // State already updated optimistically. Wallet event confirms later.
         } catch (switchError) {
-            console.error('Context: Wallet switch error:', switchError);
+            console.error('NetworkContext: Wallet switch error:', switchError.code, switchError.message, switchError);
             // Error Code 4902: Chain not added
             if (switchError.code === 4902) {
-                console.log(`Context: Chain ${targetNetwork.name} not found, attempting to add...`);
-                try {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: targetNetwork.chainIdHex,
-                            chainName: targetNetwork.name,
-                            nativeCurrency: { name: targetNetwork.symbol, symbol: targetNetwork.symbol, decimals: 18 },
-                            rpcUrls: [targetNetwork.rpcUrl].filter(Boolean),
-                            blockExplorerUrls: [targetNetwork.explorerUrl].filter(Boolean),
-                        }],
-                    });
-                     // Wallet usually switches upon adding, 'chainChanged' handles confirmation.
-                     console.log(`Context: Successfully requested add chain ${targetNetwork.name}.`);
-                } catch (addError) {
-                    console.error('Context: Failed to add network:', addError);
-                    setError(`Failed to add ${targetNetwork.name}. Manually add or switch.`);
-                    // NOTE: Even if add fails, context state *remains* on targetNetworkKey.
-                    // This might be desired (show the intended network) or confusing.
-                    // Alternative: Revert state? setCurrentNetworkKey(currentNetworkKey); // Revert on add failure? - Decided against for now.
-                }
+                console.log(`NetworkContext: Chain ${targetNetwork.name} not found, attempting to add...`);
+                 const addParams = [{
+                    chainId: targetNetwork.chainIdHex,
+                    chainName: targetNetwork.name,
+                    nativeCurrency: { name: targetNetwork.symbol, symbol: targetNetwork.symbol, decimals: 18 },
+                    rpcUrls: [targetNetwork.rpcUrl], // Assured to be valid by loadNetworksConfig
+                    blockExplorerUrls: targetNetwork.explorerUrl ? [targetNetwork.explorerUrl] : [],
+                }];
+                 console.log(`NetworkContext: Requesting add chain. Method: wallet_addEthereumChain, Params:`, JSON.parse(JSON.stringify(addParams))); // Log clean params
+                 try {
+                     await window.ethereum.request({
+                         method: 'wallet_addEthereumChain',
+                         params: addParams,
+                     });
+                     console.log(`NetworkContext: Successfully requested add chain ${targetNetwork.name}. Wallet should switch automatically.`);
+                     // State already updated optimistically. Wallet event confirms later.
+                 } catch (addError) {
+                    console.error('NetworkContext: Failed to add network:', addError);
+                    setError(`Failed to add ${targetNetwork.name}. Please add it manually via wallet settings.`);
+                    // Note: State remains on the targetNetworkKey optimistically. Could revert here if desired.
+                 }
             } else {
-                // Other switch errors (e.g., user rejection)
+                // Other switch errors (user rejection, etc.)
                 setError(`Failed to switch wallet: ${switchError.message || 'User rejected?'}`);
-                 // NOTE: Context state remains on targetNetworkKey even if user rejects.
-                 // Alternative: Revert state? setCurrentNetworkKey(currentNetworkKey); // Revert on rejection? - Decided against for now.
+                 // Note: State remains on the targetNetworkKey optimistically. Could revert here if desired.
             }
         } finally {
-            setIsSwitching(false); // Wallet interaction finished
+            setIsSwitching(false); // Wallet interaction attempt finished
         }
     } else {
-         console.log("Context: No wallet detected, only updating internal state.");
-         // No wallet action needed, internal state is already updated.
+         console.log("NetworkContext: No wallet detected, only updated internal state.");
+         // No wallet -> switching just changes the internal state/view
+         setIsSwitching(false); // Ensure switching is false if no wallet
     }
-  }, [currentNetworkKey]); // Dependency: currentNetworkKey
+  }, [currentNetworkKey, networkConfig.networks]); // Depend on current key and loaded networks
 
-  // Effect to sync state with wallet's current chain on load and changes
+  // --- Effect to Sync with Wallet and Finalize Initialization ---
   useEffect(() => {
+    // Ensure config is loaded AND networkConfig state has been set before syncing/initializing
+    if (isConfigLoading || !isConfigured || !networkConfig.defaultNetworkKey) {
+        setIsInitialized(false);
+        // console.log("NetworkContext: Waiting for config/network data before initializing...");
+        return;
+    }
+
     let isMounted = true;
-    const initializeNetwork = async () => {
-        let detectedNetworkKey = initialDefaultKey; // Start with default
-        if (window.ethereum) {
-            try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const network = await provider.getNetwork();
-                const currentChainId = network.chainId;
-                console.log(`Context: Initial wallet chain ID detected: ${currentChainId}`);
-                const matchingKey = Object.keys(configNetworks).find(key => configNetworks[key].chainId === currentChainId);
-                if (matchingKey) {
-                    console.log(`Context: Wallet connected to supported network: ${configNetworks[matchingKey].name}`);
-                    detectedNetworkKey = matchingKey;
-                } else {
-                    console.warn(`Context: Wallet connected to unsupported chain ID: ${currentChainId}. Using default: ${initialDefaultKey}`);
-                    setError(`Wallet on unsupported network (ID: ${currentChainId}). Switched view to default.`);
-                    // Keep detectedNetworkKey as initialDefaultKey
-                }
-            } catch (err) {
-                 console.error("Context: Error getting initial network:", err);
-                 setError("Could not detect wallet network.");
-                 // Keep detectedNetworkKey as initialDefaultKey
-            }
+    console.log("NetworkContext: Running Wallet Sync/Initialization Effect...");
+    const initializeAndSyncWallet = async () => {
+        let detectedNetworkKey = networkConfig.defaultNetworkKey; // Start with default from loaded config
+
+        if (window.ethereum && window.ethereum.isMetaMask) { // Check for wallet presence
+             try {
+                 // Use Ethers to get network info safely
+                 const provider = new ethers.providers.Web3Provider(window.ethereum, "any"); // "any" allows detection without throwing on unsupported network
+                 const network = await provider.getNetwork();
+                 const currentChainId = network.chainId;
+                 console.log(`NetworkContext: Wallet sync - Detected chain ID: ${currentChainId}`);
+
+                 const matchingKey = Object.keys(networkConfig.networks).find(key => networkConfig.networks[key].chainId === currentChainId);
+                 if (matchingKey) {
+                     console.log(`NetworkContext: Wallet sync - Matched supported network: ${networkConfig.networks[matchingKey].name} (${matchingKey})`);
+                     detectedNetworkKey = matchingKey;
+                     // Clear error if user is now on a supported chain
+                     setError(prevError => prevError?.includes("Unsupported network") ? null : prevError);
+                 } else {
+                     console.warn(`NetworkContext: Wallet sync - Connected to unsupported chain ID: ${currentChainId}. Context falling back to default: ${networkConfig.defaultNetworkKey}`);
+                     // Set error only if it wasn't already set (avoids flicker)
+                     setError(prevError => prevError ? prevError : `Wallet on unsupported network (ID: ${currentChainId}). View set to default.`);
+                     // Keep detectedNetworkKey as the loaded default
+                 }
+             } catch (err) {
+                 console.error("NetworkContext: Wallet sync - Error getting network:", err);
+                 // Don't set isInitialized=false here, just report error
+                 setError(prevError => prevError ? prevError : "Could not detect wallet network.");
+                 // Keep detectedNetworkKey as the loaded default
+             }
         } else {
-            console.log("Context: No wallet detected, using default network.");
-            // Keep detectedNetworkKey as initialDefaultKey
+             console.log("NetworkContext: Wallet sync - No Ethereum wallet (MetaMask) detected.");
+             // Keep detectedNetworkKey as the loaded default
         }
 
         if (isMounted) {
-             // *** Crucial: Only set state if it's different from initial ***
-             // This prevents unnecessary updates if default is correct
+             // Update the currently selected key based on detection, only if different
              if (currentNetworkKey !== detectedNetworkKey) {
-                 setCurrentNetworkKey(detectedNetworkKey);
+                  console.log(`NetworkContext: Setting current network key based on detection: ${detectedNetworkKey}`);
+                  setCurrentNetworkKey(detectedNetworkKey);
              }
-             setIsInitialized(true); // Mark as initialized AFTER setting the key
-             console.log(`Context: Initialization complete. Final network key: ${detectedNetworkKey}`);
+             setIsInitialized(true); // Mark context as initialized NOW
+             console.log(`NetworkContext: Initialization complete. Final selected key: ${currentNetworkKey || detectedNetworkKey}`);
         }
     };
 
-    initializeNetwork();
+    initializeAndSyncWallet();
 
     // Listener for chain changes from the wallet
     const handleChainChanged = (chainIdHex) => {
-      if (!isMounted) return; // Avoid state updates if unmounted
+      if (!isMounted) return;
       const chainId = parseInt(chainIdHex, 16);
-      console.log(`Context: Wallet chain changed event. New chainId: ${chainId} (${chainIdHex})`);
-      const matchingKey = Object.keys(configNetworks).find(key => configNetworks[key].chainId === chainId);
-      let keyToSet = initialDefaultKey; // Default to fallback
+      console.log(`NetworkContext: 'chainChanged' event detected. New chainId: ${chainId} (${chainIdHex})`);
+      const matchingKey = Object.keys(networkConfig.networks).find(key => networkConfig.networks[key].chainId === chainId);
+      let keyToSet = networkConfig.defaultNetworkKey; // Fallback to loaded default
+
       if (matchingKey) {
-        console.log(`Context: Wallet switched to supported network: ${configNetworks[matchingKey].name}`);
+        console.log(`NetworkContext: Wallet switched to supported network: ${networkConfig.networks[matchingKey].name}`);
         keyToSet = matchingKey;
         setError(null); // Clear error if user switches to supported chain
       } else {
-        console.warn(`Context: Wallet switched to unsupported chain ID: ${chainId}. Setting context to default.`);
+        console.warn(`NetworkContext: Wallet switched to unsupported chain ID: ${chainId}. Context falling back to default: ${networkConfig.defaultNetworkKey}`);
         setError(`Switched to unsupported network (ID: ${chainId}). View reset to default.`);
-        // keyToSet remains initialDefaultKey
       }
-       // Update context state only if it differs from current state
-       setCurrentNetworkKey(prevKey => {
+      // Update context state only if it differs from current state
+      setCurrentNetworkKey(prevKey => {
            if (prevKey !== keyToSet) {
+               console.log(`NetworkContext: Updating state from chainChanged event to: ${keyToSet}`);
                return keyToSet;
            }
            return prevKey; // No change needed
        });
     };
 
-    if (window.ethereum) { window.ethereum.on('chainChanged', handleChainChanged); }
+    // Setup listener only if wallet exists
+    if (window.ethereum) {
+        window.ethereum.on('chainChanged', handleChainChanged);
+        console.log("NetworkContext: 'chainChanged' listener attached.");
+    }
 
-    // Cleanup listener
+    // Cleanup function
     return () => {
       isMounted = false;
-      if (window.ethereum?.removeListener) { window.ethereum.removeListener('chainChanged', handleChainChanged); }
+      if (window.ethereum?.removeListener) {
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+        console.log("NetworkContext: 'chainChanged' listener removed.");
+      }
     };
-    // Run only once on mount, relies on callback updates for subsequent changes
-  }, [initialDefaultKey]); // Depend on initialDefaultKey derived from config
+    // Rerun this effect if the loaded network configuration changes
+  }, [networkConfig.networks, networkConfig.defaultNetworkKey, isConfigured, isConfigLoading]);
 
+
+  // --- Final Context Value ---
   const value = {
-    networks: configNetworks, // Provide the full config
-    currentNetwork: currentNetwork, // Derived state, guaranteed to be a valid network object
-    currentNetworkKey: currentNetworkKey, // The current key state
-    switchNetwork,
-    isSwitching,
-    isInitialized,
-    error,
+    networks: networkConfig.networks, // The dynamically loaded networks object
+    currentNetwork: currentNetwork, // The network object for the currently selected key
+    currentNetworkKey: currentNetworkKey, // The currently selected network key
+    defaultNetworkKey: networkConfig.defaultNetworkKey, // The resolved default key
+    displayPrefs: networkConfig.displayPrefs, // Pass display prefs through
+    projectName: networkConfig.projectName, // Pass project name through
+    switchNetwork, // Function to initiate switching
+    isSwitching, // Boolean indicating if a switch is in progress
+    isInitialized, // Boolean indicating if NetworkContext has synced with wallet/config
+    error, // Any error messages related to network operations/syncing
   };
 
   return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
@@ -187,6 +241,8 @@ export const NetworkProvider = ({ children }) => {
 // Custom hook to use the context
 export const useNetwork = () => {
   const context = useContext(NetworkContext);
-  if (context === null) { throw new Error('useNetwork must be used within a NetworkProvider'); }
+  if (context === null) {
+    throw new Error('useNetwork must be used within a NetworkProvider');
+  }
   return context;
 };

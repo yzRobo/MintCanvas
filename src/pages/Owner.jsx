@@ -246,9 +246,6 @@ const Owner = () => {
                 <Button onClick={() => navigate('/create-metadata')}>
                 Go to Metadata Creator <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button onClick={() => navigate('/create-metadata-large')} variant="outline">
-                For Files Over 3MB <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
             </div>
         </div>
 
