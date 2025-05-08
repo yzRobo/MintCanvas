@@ -1,0 +1,15 @@
+{
+    "version": 2,
+    "buildCommand": "vite build",
+    "devCommand": "vite",
+    "functions": {
+      "api/**/*.js": {
+        "memory": 1024,
+        "maxDuration": 10
+      }
+    },
+    "rewrites": [
+      { "source": "/api/(.*)", "destination": "/api/$1" },
+      { "source": "/(.*)", "destination": "/" }
+    ]
+  }
