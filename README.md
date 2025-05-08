@@ -66,4 +66,8 @@ Deploy easily using the Vercel button above or via the Vercel CLI. Ensure you se
 
 ## License
 
-[Your License - e.g., MIT] <!-- TODO: Choose and add a license -->
+This project is licensed under the **GNU Affero General Public License v3.0** (AGPLv3).
+
+You may use, modify, and distribute this software under the terms of the AGPLv3 license. If you deploy a modified version of this application as a service, you are required to make your source code available to users under the same license.
+
+See the [LICENSE](./LICENSE) file for full license text.
