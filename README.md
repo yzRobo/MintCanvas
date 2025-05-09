@@ -6,6 +6,8 @@ Create and manage your own unique NFT showcase and minting platform with an easy
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/yzRobo/nft-gallery-dapp) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
+> **GitHub Codespaces Usage**: This template supports one-click setup with GitHub Codespaces. All users can access their free monthly allowance (60 core hours for personal accounts) without adding payment information. When your free tier is exhausted, GitHub will simply pause Codespaces functionality until the next billing cycle.
+
 <!-- Optional: Add a link to a live demo if you deploy one -->
 <!-- **[Live Demo (Template Example)](YOUR_DEMO_LINK_HERE)** -->
 
