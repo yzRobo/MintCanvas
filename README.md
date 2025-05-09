@@ -2,8 +2,8 @@
 
 Create and manage your own unique NFT showcase and minting platform with an easy-to-use setup wizard. Designed for artists, creators, and developers looking for a quick and configurable start.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2F<YOUR_USERNAME>%2F<YOUR_REPO_NAME>&project-name=my-nft-gallery&framework=vite&env=PINATA_JWT,KV_URL,KV_REST_API_URL,KV_REST_API_TOKEN,KV_REST_API_READ_ONLY_TOKEN,REDIS_URL&envDescription=Required%20for%20IPFS%20and%20large%20file%20uploads.) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/<YOUR_USERNAME>/<YOUR_REPO_NAME>) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FyzRobo%2Fnft-gallery-dapp&project-name=my-nft-gallery&framework=vite&env=PINATA_JWT,KV_URL,KV_REST_API_URL,KV_REST_API_TOKEN,KV_REST_API_READ_ONLY_TOKEN,REDIS_URL&envDescription=Required%20for%20IPFS%20and%20large%20file%20uploads.) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/yzRobo/nft-gallery-dapp) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 <!-- Optional: Add a link to a live demo if you deploy one -->
