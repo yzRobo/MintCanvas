@@ -211,7 +211,7 @@ const Mint = () => {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      <h2 className="text-3xl font-bold text-center">Mint New NFT ({currentNetwork.name})</h2>
+      <h2 className="text-3xl font-bold text-center">Mint New NFT</h2>
 
       {/* Display Current Allowed Minter */}
       <div className="text-sm text-center text-muted-foreground p-2 border rounded bg-background">

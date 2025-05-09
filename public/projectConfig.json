@@ -1,1 +1,30 @@
-{}
+{
+  "projectName": "Test",
+  "projectDescription": "",
+  "networks": {
+    "ETHEREUM": {
+      "contractAddress": "0xeBd38fFe78767d20ad2FabBA11bDabC3984886c5",
+      "isCustom": false,
+      "ownerOnly": false,
+      "rpcUrl": "https://base-mainnet.infura.io/v3/2f27780aecde49a5a8b5660042d1c792"
+    },
+    "POLYGON_AMOY": {
+      "ownerOnly": false,
+      "isCustom": false
+    },
+    "BASE_SEPOLIA": {
+      "ownerOnly": false,
+      "isCustom": false
+    },
+    "SEPOLIA": {
+      "rpcUrl": "https://base-mainnet.infura.io/v3/2f27780aecde49a5a8b5660042d1c792",
+      "isCustom": false,
+      "contractAddress": "0xe3166Bb8C0b73a4bCdD2A416520F78AE55E21A21"
+    }
+  },
+  "displayPrefs": {
+    "primaryAttribute": "Year"
+  },
+  "configFormatVersion": 1,
+  "defaultNetworkKey": "ETHEREUM"
+}
