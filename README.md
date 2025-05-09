@@ -43,14 +43,14 @@ This project is a configurable template that lets you quickly set up and persona
 3. **Run the Wizard:** Use the configuration wizard to set up your project details and networks
 4. **Deploy:** Launch your personalized NFT Gallery
 
-For detailed instructions, see the [Getting Started guide](https://github.com/yzRobo/nft-gallery-dapp/wiki/1.-Getting-Started) in the wiki.
+For detailed instructions, see the [Getting Started guide](https://github.com/yzRobo/MintCanvas/wiki/1.-Getting-Started) in the wiki.
 
 ## Technology Stack
 
-This project uses React, Vite, Tailwind CSS, shadcn/ui, Ethers.js, and Vercel serverless functions. See the [Technology Stack](https://github.com/yzRobo/nft-gallery-dapp/wiki/6.-Technology-Stack) wiki page for details.
+This project uses React, Vite, Tailwind CSS, shadcn/ui, Ethers.js, and Vercel serverless functions. See the [Technology Stack](https://github.com/yzRobo/MintCanvas/wiki/6.-Technology-Stack) wiki page for details.
 
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0** (AGPLv3).
 
-See the [LICENSE](./LICENSE) file for the full license text or the [License Information](https://github.com/yzRobo/nft-gallery-dapp/wiki/License-Information) wiki page for more details.
+See the [LICENSE](./LICENSE) file for the full license text or the [License Information](https://github.com/yzRobo/MintCanvas/wiki/License-Information) wiki page for more details.
