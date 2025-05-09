@@ -1,9 +1,9 @@
-# NFT Gallery & 1-of-1 Minting dApp Template
+# MintCanvas
 
-Create and manage your own unique NFT showcase and minting platform with an easy-to-use setup wizard. Designed for artists, creators, and developers looking for a quick and configurable start.
+A customizable NFT gallery and minting platform. Create, showcase, and manage your digital collectibles with an easy-to-configure template built on React, Vite, and Ethereum-compatible chains.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FyzRobo%2Fnft-gallery-dapp&project-name=my-nft-gallery&framework=vite&env=PINATA_JWT,KV_URL,KV_REST_API_URL,KV_REST_API_TOKEN,KV_REST_API_READ_ONLY_TOKEN,REDIS_URL&envDescription=Required%20for%20IPFS%20and%20large%20file%20uploads.) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/yzRobo/nft-gallery-dapp) <!-- TODO: Update YOUR_USERNAME/YOUR_REPO_NAME -->
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FyzRobo%2FMintCanvas&project-name=mint-canvas&framework=vite&env=PINATA_JWT,KV_URL,KV_REST_API_URL,KV_REST_API_TOKEN,KV_REST_API_READ_ONLY_TOKEN,REDIS_URL&envDescription=Required%20for%20IPFS%20and%20large%20file%20uploads.)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/yzRobo/MintCanvas)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 > **GitHub Codespaces Usage**: This template supports one-click setup with GitHub Codespaces. All users can access their free monthly allowance (60 core hours for personal accounts) without adding payment information. When your free tier is exhausted, GitHub will simply pause Codespaces functionality until the next billing cycle.
@@ -13,7 +13,7 @@ Create and manage your own unique NFT showcase and minting platform with an easy
 
 ## 📚 Documentation
 
-**For comprehensive documentation, please visit the [project wiki](https://github.com/yzRobo/nft-gallery-dapp/wiki).**
+**For comprehensive documentation, please visit the [project wiki](https://github.com/yzRobo/MintCanvas/wiki).**
 
 The wiki provides detailed guides on setup, configuration, deployment, and more.
 
